@@ -1,0 +1,75 @@
+pipeline {
+    agent any
+
+    environment {
+        DISABLE_AUTH = 'true'
+        DB_ENGINE    = 'sqlite'
+    }
+
+    parameters {
+        string(name: 'USERNAME', defaultValue: 'Gaurav', description: 'Your name')
+        booleanParam(name: 'IS_ACTIVE', defaultValue: true, description: 'Is active?')
+        choice(name: 'CITY', choices: ['Delhi', 'Mumbai', 'Chennai'], description: 'Choose a city')
+    }
+
+    stages {
+        stage("Testing") {
+            environment {
+                SCOPE = 'Local'
+            }
+            steps {
+                echo 'Testing...'
+                echo "PATH: $PATH"
+                echo "HOME: $HOME"
+                echo "USER: $USER"
+                echo "Database engine is ${env.DB_ENGINE}"
+                echo "DISABLE_AUTH is ${env.DISABLE_AUTH}"
+                sh 'printenv'
+                echo "SCOPE: ${env.SCOPE}"
+                echo "USERNAME: ${params.USERNAME}"
+                echo "IS_ACTIVE: ${params.IS_ACTIVE}"
+                echo "CITY: ${params.CITY}"
+            }
+        }
+
+        stage("Building") {
+            steps {
+                sh 'echo Building...'
+                sh 'echo $BUILD_ID'
+                sh 'echo $BUILD_DISPLAY_NAME'
+                sh 'echo $EXECUTOR_NUMBER'
+                sh 'echo $JOB_NAME'
+                sh 'echo $NODE_NAME'
+                sh 'echo $WORKSPACE'
+                sh 'echo $JENKINS_HOME'
+                sh 'echo $JENKINS_URL'
+                sh 'echo $BUILD_URL'
+                sh 'echo $JOB_URL'
+            }
+        }
+
+        stage("Approval") {
+            steps {
+                input message: "Do you want to proceed?", ok: "Yes, proceed"
+            }
+        }
+
+        stage("Deploying") {
+            steps {
+                sh 'echo Deploying...'
+            }
+        }
+    }
+
+    post {
+        always {
+            echo "This will always run"
+        }
+        failure {
+            echo "This will run on failure"
+        }
+        success {
+            echo "This will run on success"
+        }
+    }
+}
