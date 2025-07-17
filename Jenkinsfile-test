@@ -7,16 +7,19 @@ pipeline{
         stage("TEST"){
             steps{
                 sh "mvn test"
+                slackSend channel: 'jenkins', message: 'Successfully tested'
             }
         }
         stage("BUILD"){
             steps{
                 sh "mvn package"
+                slackSend channel: 'jenkins', message: 'Successfully build'
             }
         }
         stage("DEPLOY_TO_TEST"){
             steps{
                 deploy adapters: [tomcat9(alternativeDeploymentContext: '', credentialsId: 'ba67d9f6-23cc-4aea-acd2-54dfe5882425', path: '', url: 'http://192.168.29.207:8080')], contextPath: '/app', war: '**/*.war'
+                slackSend channel: 'jenkins', message: 'Successfully deployed to test server'
             }
         }
         stage("Approval"){
@@ -27,18 +30,24 @@ pipeline{
         stage("DEPLOY_TO_PROD"){
             steps{
                 deploy adapters: [tomcat9(alternativeDeploymentContext: '', credentialsId: 'ba67d9f6-23cc-4aea-acd2-54dfe5882425', path: '', url: 'http://192.168.29.173:8080')], contextPath: '/app', war: '**/*.war'
+                slackSend channel: 'jenkins', message: 'Successfully deployed to prod server'
             }
         }
     }
     post{
         always{
-            echo "========always========"
+            echo "${env.BUILD_NUMBER} DONE"
         }
         success{
-            echo "========pipeline executed successfully ========"
+            echo 'Build and Test Stages Successful!'
+            echo "Archiving Artifacts"
+            archiveArtifacts artifacts: '**/*.war', followSymlinks: false, onlyIfSuccessful: true
         }
         failure{
-            echo "========pipeline execution failed========"
+            echo "Failed"
+            mail to: 'mahinraza556@gmail.com',
+            subject: "FAILED: ${env.JOB_NAME} – Build #${env.BUILD_NUMBER}",
+            body: "Job '${env.JOB_NAME}' (${env.BUILD_URL}) failed."
         }
     }
 }
