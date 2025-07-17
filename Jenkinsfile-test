@@ -1,75 +1,39 @@
-pipeline {
+pipeline{
     agent any
-
-    environment {
-        DISABLE_AUTH = 'true'
-        DB_ENGINE    = 'sqlite'
+    tools{
+        maven "Maven"
     }
-
-    parameters {
-        string(name: 'USERNAME', defaultValue: 'Gaurav', description: 'Your name')
-        booleanParam(name: 'IS_ACTIVE', defaultValue: true, description: 'Is active?')
-        choice(name: 'CITY', choices: ['Delhi', 'Mumbai', 'Chennai'], description: 'Choose a city')
-    }
-
-    stages {
-        stage("Testing") {
-            environment {
-                SCOPE = 'Local'
-            }
-            steps {
-                echo 'Testing...'
-                echo "PATH: $PATH"
-                echo "HOME: $HOME"
-                echo "USER: $USER"
-                echo "Database engine is ${env.DB_ENGINE}"
-                echo "DISABLE_AUTH is ${env.DISABLE_AUTH}"
-                sh 'printenv'
-                echo "SCOPE: ${env.SCOPE}"
-                echo "USERNAME: ${params.USERNAME}"
-                echo "IS_ACTIVE: ${params.IS_ACTIVE}"
-                echo "CITY: ${params.CITY}"
+    stages{
+        stage("TEST"){
+            steps{
+                sh "mvn test"
             }
         }
-
-        stage("Building") {
-            steps {
-                sh 'echo Building...'
-                sh 'echo $BUILD_ID'
-                sh 'echo $BUILD_DISPLAY_NAME'
-                sh 'echo $EXECUTOR_NUMBER'
-                sh 'echo $JOB_NAME'
-                sh 'echo $NODE_NAME'
-                sh 'echo $WORKSPACE'
-                sh 'echo $JENKINS_HOME'
-                sh 'echo $JENKINS_URL'
-                sh 'echo $BUILD_URL'
-                sh 'echo $JOB_URL'
+        stage("BUILD"){
+            steps{
+                sh "mvn package"
             }
         }
-
-        stage("Approval") {
-            steps {
-                input message: "Do you want to proceed?", ok: "Yes, proceed"
+        stage("DEPLOY_TO_TEST"){
+            steps{
+                deploy adapters: [tomcat9(alternativeDeploymentContext: '', credentialsId: 'ba67d9f6-23cc-4aea-acd2-54dfe5882425', path: '', url: 'http://192.168.29.207:8080')], contextPath: '/app', war: '**/*.war'
             }
         }
-
-        stage("Deploying") {
-            steps {
-                sh 'echo Deploying...'
+        stage("DEPLOY_TO_PROD"){
+            steps{
+                deploy adapters: [tomcat9(alternativeDeploymentContext: '', credentialsId: 'ba67d9f6-23cc-4aea-acd2-54dfe5882425', path: '', url: 'http://192.168.29.173:8080')], contextPath: '/app', war: '**/*.war'
             }
         }
     }
-
-    post {
-        always {
-            echo "This will always run"
+    post{
+        always{
+            echo "========always========"
         }
-        failure {
-            echo "This will run on failure"
+        success{
+            echo "========pipeline executed successfully ========"
         }
-        success {
-            echo "This will run on success"
+        failure{
+            echo "========pipeline execution failed========"
         }
     }
 }
