@@ -21,8 +21,7 @@ pipeline{
         }
         stage("Approval"){
             steps{
-                input message: "Do you want to proceed?"
-                ok: "Yes, proceed"
+                input message: "Do you want to proceed?", ok: "Yes, proceed"
             }
         }
         stage("DEPLOY_TO_PROD"){
